@@ -30,17 +30,26 @@ export function objectRecord(row,buildingId) {
   const type=values(row.typeName||field(['ifctype','ifcentity','entity','kind','@kind','type']))[0]||'';
   return {id:String(id),buildingId:String(buildingId),properties:p,type,documentId:String(row.document??values(field(['@documentid','documentid']))[0]??''),layer:values(field(['@layer','layer','modellag']))[0]||''};
 }
+export function mmiStatus(o,selectedField='') {
+  const matches=Object.entries(o.properties).filter(([key])=>isMmi(key));
+  const raw=selectedField?values(o.properties[selectedField]):matches.flatMap(([,v])=>values(v));
+  const distinct=[...new Set(raw.map(normalizeMmi))];
+  return distinct.length===0?'Mangler MMI':distinct.length>1?'Motstridende MMI':distinct[0];
+}
+export const proxyType=o=>o.type.replace(/^Ifc/i,'').replace(/[ _-]/g,'').toLowerCase();
+export function filteredObjects(data,layer='') {
+  const models=data.models.filter(m=>!layer||`${m.buildingId}|${m.layer}`===layer);
+  return data.objects.filter(o=>!layer||models.some(m=>m.buildingId===o.buildingId&&((o.documentId&&o.documentId===m.documentId)||(!o.documentId&&o.layer===m.layer))));
+}
 export function summarize(objects,selectedField='') {
   const counts=new Map(),fields=new Set();let proxy=0,buildingElementProxy=0,unknownType=0;
   for(const o of objects) {
-    const type=o.type.replace(/^Ifc/i,'').replace(/[ _-]/g,'').toLowerCase();
+    const type=proxyType(o);
     if(type==='proxy')proxy++;
     if(type==='buildingelementproxy')buildingElementProxy++;
     if(!type)unknownType++;
     const matches=Object.entries(o.properties).filter(([key])=>isMmi(key));matches.forEach(([key])=>fields.add(key));
-    const raw=selectedField?values(o.properties[selectedField]):matches.flatMap(([,v])=>values(v));
-    const distinct=[...new Set(raw.map(normalizeMmi))];
-    const status=distinct.length===0?'Mangler MMI':distinct.length>1?'Motstridende MMI':distinct[0];
+    const status=mmiStatus(o,selectedField);
     counts.set(status,(counts.get(status)||0)+1);
   }
   return {total:objects.length,proxy,buildingElementProxy,unknownType,fields:[...fields].sort(),counts:[...counts].sort(([a],[b])=>a.localeCompare(b,'nb',{numeric:true}))};

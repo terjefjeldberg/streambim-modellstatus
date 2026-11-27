@@ -1,0 +1,8 @@
+{
+  "name": "streambim-modellstatus",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-test-isolation=none --test tests/*.test.mjs"
+  }
+}

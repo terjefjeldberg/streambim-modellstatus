@@ -39,7 +39,7 @@ export function readIfcObjects(text,file) {
     for(const type of types.get(id)||[])for(const ref of entities.get(type?.ref)?.args[5]||[])merge(ref);
     const instanceProperties={};for(const ref of instance.get(id)||[])for(const [key,value] of Object.entries(sets.get(ref?.ref)||{})){if(Object.hasOwn(instanceProperties,key))instanceProperties[key]=[instanceProperties[key],value].flat(Infinity);else instanceProperties[key]=value;}
     Object.assign(properties,instanceProperties);
-    objects.push({id:`${file.documentId}:#${id}`,buildingId:file.buildingId,documentId:file.documentId,layer:file.layer,type:e.type,properties});
+    objects.push({id:`${file.documentId}:#${id}`,globalId:e.args[0],buildingId:file.buildingId,documentId:file.documentId,layer:file.layer,type:e.type,properties});
   }
   return objects;
 }
